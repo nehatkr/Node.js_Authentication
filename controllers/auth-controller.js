@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 //register controller
 const registerUser = async (req, res) => {
@@ -55,28 +56,45 @@ const registerUser = async (req, res) => {
 // login controller
 const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password } = req.body;  //getting the field value from the frontend
+    console.log("Request body:", req.body);
+
+
     // first find if the current user is exists in database or not
     const user = await User.findOne({ username });
     if (!user) {
+      return res.status(400).json({
+        success: false,
+        massage: "User dosen't exists",
+      });
+    }
+
+    // if the password is correct  or not
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
       return res.status(400).json({
         success: false,
         massage: "Invalid crendentials!",
       });
     }
 
-    // if the password is correct  or not
-    const isPasswordMatch = await bcrypt.compare(password, user.password)
-    if(!isPasswordMatch){
-        return res.status(400).json({
-        success: false,
-        massage: "Invalid crendentials!",
-        });
-    }
-
-// create user token
-
-
+    // create user token
+    const accessToken = jwt.sign(
+      {
+        userId: user._id,
+        username: user.username,
+        role: user.role,
+      },
+      process.env.JWT_SECRET_KEY,
+      {
+        expiresIn: "15m",
+      });
+      // returning the token back
+      res.status(200).json({
+        success : true,
+        message : 'Logged in successful',
+        accessToken
+      })
   } catch (e) {
     console.log(e);
     res.status(500).json({
