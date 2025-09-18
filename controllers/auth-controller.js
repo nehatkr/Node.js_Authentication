@@ -1,46 +1,47 @@
-const User = require('../models/user')
-const bcrypt = require('bcryptjs')
-
+const User = require("../models/user");
+const bcrypt = require("bcryptjs");
 
 //register controller
 const registerUser = async (req, res) => {
   try {
     // extract user information from our request body
-    const {username, email, password, role} = req.body;
+    const { username, email, password, role } = req.body;
 
     // check if the user is already exists in our database
-    const checkExistingUser = await User.findOne({$or : [{username}, {email}]});
+    const checkExistingUser = await User.findOne({
+      $or: [{ username }, { email }],
+    });
     if (checkExistingUser) {
-        return res.status(400).json({
-            success : false,
-            message: 'User is already exists either with same username or same email. Please try with a different a different username or email',
-        })
+      return res.status(400).json({
+        success: false,
+        message:
+          "User is already exists either with same username or same email. Please try with a different  username or a different email",
+      });
     }
     // hash user password
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password,salt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // create a new user and save in your database
-    const newlyCreatedUser  = new User({
-        username,
-        email,
-        password : hashedPassword,
-        role : role || 'user'
-    }) 
-     
+    const newlyCreatedUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role: role || "user",
+    });
+
     await newlyCreatedUser.save();
 
     if (newlyCreatedUser) {
-        res.status(201).json({
-            success : true,
-            message : 'User registered successfully!'
-        })
-        
-    }else{
-        res.status(400).json({
-            success : false,
-            message : 'Unable to register user!. Please try again leter'
-        })
+      res.status(201).json({
+        success: true,
+        message: "User registered successfully!",
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Unable to register user!. Please try again leter",
+      });
     }
   } catch (e) {
     console.log(e);
@@ -54,6 +55,28 @@ const registerUser = async (req, res) => {
 // login controller
 const loginUser = async (req, res) => {
   try {
+    const { username, password } = req.body;
+    // first find if the current user is exists in database or not
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        massage: "Invalid crendentials!",
+      });
+    }
+
+    // if the password is correct  or not
+    const isPasswordMatch = await bcrypt.compare(password, user.password)
+    if(!isPasswordMatch){
+        return res.status(400).json({
+        success: false,
+        massage: "Invalid crendentials!",
+        });
+    }
+
+// create user token
+
+
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -64,5 +87,6 @@ const loginUser = async (req, res) => {
 };
 
 module.exports = {
-    registerUser, loginUser
-}
+  registerUser,
+  loginUser,
+};
