@@ -56,9 +56,8 @@ const registerUser = async (req, res) => {
 // login controller
 const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;  //getting the field value from the frontend
+    const { username, password } = req.body; //getting the field value from the frontend
     console.log("Request body:", req.body);
-
 
     // first find if the current user is exists in database or not
     const user = await User.findOne({ username });
@@ -88,13 +87,14 @@ const loginUser = async (req, res) => {
       process.env.JWT_SECRET_KEY,
       {
         expiresIn: "15m",
-      });
-      // returning the token back
-      res.status(200).json({
-        success : true,
-        message : 'Logged in successful',
-        accessToken
-      })
+      }
+    );
+    // returning the token back
+    res.status(200).json({
+      success: true,
+      message: "Logged in successful",
+      accessToken,
+    });
   } catch (e) {
     console.log(e);
     res.status(500).json({
@@ -103,8 +103,56 @@ const loginUser = async (req, res) => {
     });
   }
 };
+//  change password
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.userInfo.userId; //this will get the current user id
 
+    //  extract old and new password;
+    const { oldPassword, newPassword } = req.body;
+
+    // find the current loggedin user
+    const user = await User.findById(userId);
+
+    // if user is present or not
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // check if the old password is correct
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return res.ststus(400).json({
+        success: false,
+        message: "Old password is not correct ! please try again",
+      });
+    }
+
+    // hash the new password here
+    const salt = await bcrypt.genSalt(10);
+    const neHashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // update user password
+    user.password = neHashedPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      massage: "Password changed successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Some error occured! please try again",
+    });
+  }
+};
 module.exports = {
   registerUser,
   loginUser,
+  changePassword,
 };
