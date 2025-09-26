@@ -2,7 +2,7 @@ const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-//register controller
+// register controller
 const registerUser = async (req, res) => {
   try {
     // extract user information from our request body
@@ -103,7 +103,7 @@ const loginUser = async (req, res) => {
     });
   }
 };
-//  change password
+// change password controller
 const changePassword = async (req, res) => {
   try {
     const userId = req.userInfo.userId; //this will get the current user id
@@ -151,6 +151,7 @@ const changePassword = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   registerUser,
   loginUser,
